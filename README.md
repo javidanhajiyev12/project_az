@@ -1,4 +1,4 @@
-# 📦 Project AZ – Barcode Scanner & Product Management System
+# 📦 Project Azergold – Barcode Scanner & Product Management System
 
 ## 📌 Overview
 Project AZ is a full-stack web-based barcode scanning and product verification system designed to streamline product tracking and documentation processes. The application allows users to scan barcodes using a device camera or enter them manually, validate product information through a backend system, capture product images, and generate downloadable Excel reports.
