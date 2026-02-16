@@ -7,6 +7,11 @@ This system is ideal for inventory management, warehouse operations, retail envi
 
 ---
 
+# URL
+https://barcodescanner1.pythonanywhere.com
+
+
+
 ## 🚀 Features
 - 📷 Real-time barcode scanning using device camera
 - ✍ Manual barcode entry option
