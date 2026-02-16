@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>📷 Barcode Scanner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 40px; }
+    #reader, #video { width: 320px; margin: auto; }
+    #barcodeInput { width: 80%; padding: 10px; font-size: 16px; }
+    button { padding: 10px 20px; font-size: 16px; margin-top: 10px; }
+    #result { font-size: 18px; margin-top: 20px; }
+    #download-btn {
+      background-color: #4CAF50; color: white; border: none;
+      border-radius: 5px; cursor: pointer;
+    }
+    #download-btn:hover { background-color: #45a049; }
+  </style>
+</head>
+<body>
+  <h2>📦 Barcode Scanner</h2>
+  <div id="reader"></div><br>
+  <input type="text" id="barcodeInput" placeholder="Or type barcode manually" /><br><br>
+  <button onclick="checkBarcode()">Check</button><br><br>
+
+  <video id="video" width="320" height="240" autoplay style="display:none;"></video>
+  <canvas id="canvas" width="320" height="240" style="display:none;"></canvas><br>
+  <button onclick="startCamera()">📸 Open Back Camera</button>
+  <button onclick="capturePhoto()">📷 Take Photo</button>
+
+  <div id="result"></div><br>
+  <a href="/download_excel"><button id="download-btn">📥 Download Excel</button></a>
+
+  <script>
+    let lastScanned = "";
+
+    function onScanSuccess(decodedText) {
+      if (decodedText !== lastScanned) {
+        lastScanned = decodedText;
+        document.getElementById("barcodeInput").value = decodedText;
+        checkBarcode();
+      }
+    }
+
+    const scanner = new Html5QrcodeScanner("reader", {
+      fps: 10,
+      qrbox: { width: 250, height: 250 },
+      rememberLastUsedCamera: true,
+      supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+    }, false);
+    scanner.render(onScanSuccess);
+
+    async function checkBarcode() {
+      const barcode = document.getElementById("barcodeInput").value.trim();
+      const resDiv = document.getElementById("result");
+      if (!barcode) {
+        resDiv.innerText = "❗ Please enter a barcode.";
+        resDiv.style.color = "red";
+        return;
+      }
+      resDiv.innerText = "🔍 Checking...";
+      resDiv.style.color = "black";
+      const res = await fetch("/check_barcode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ barcode })
+      });
+      const data = await res.json();
+      resDiv.innerText = data.message;
+      resDiv.style.color = data.status === "green" ? "green" :
+                           data.status === "yellow" ? "orange" : "red";
+    }
+
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
+        .then(stream => {
+          const video = document.getElementById("video");
+          video.srcObject = stream;
+          video.style.display = 'block';
+        })
+        .catch(err => {
+          alert("❌ Back camera not available: " + err.message);
+        });
+    }
+
+    function capturePhoto() {
+      const barcode = document.getElementById("barcodeInput").value.trim();
+      if (!barcode) return alert("❗ Scan or enter barcode first.");
+
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = canvas.toDataURL("image/png");
+
+      fetch("/upload_photo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ barcode, image: imageData })
+      })
+      .then(res => res.json())
+      .then(data => alert(data.message))
+      .catch(err => alert("❌ Upload error: " + err.message));
+    }
+  </script>
+</body>
+</html>
